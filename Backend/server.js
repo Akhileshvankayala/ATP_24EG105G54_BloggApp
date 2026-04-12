@@ -14,7 +14,8 @@ app.use(
   cors({
     origin: [
       'http://localhost:5173',
-      'https://atp-24-eg-105-g54-blogg-git-035ccb-akhileshs-projects-7e082507.vercel.app'
+      'https://atp-24-eg-105-g54-blogg-git-035ccb-akhileshs-projects-7e082507.vercel.app',
+      'https://atp-24-eg-105-g54-blogg-app.vercel.app'  // ← add this
     ],
     credentials: true
   })
