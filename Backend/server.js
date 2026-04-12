@@ -1,3 +1,4 @@
+import 'dotenv/config'  // add this as first line
 import exp from 'express'
 import { connect } from 'mongoose'
 import { userApp } from './APIs/UserAPI.js'
