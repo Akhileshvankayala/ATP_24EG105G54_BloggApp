@@ -1,0 +1,11 @@
+# Ignore node_modules and environment files in the root project
+node_modules
+.env
+.DS_Store
+
+# Ignore OS files
+Thumbs.db
+
+# Ignore logs
+logs
+*.log
