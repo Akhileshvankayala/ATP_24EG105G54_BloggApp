@@ -11,7 +11,7 @@ import cloudinary from '../config/cloudinary.js'
 
 //Router for registration
 commonApp.post(
-  '/users',
+  '/auth/users',
   upload.single('profileImageUrl'),
   async (req, res, next) => {
     let cloudinaryResult = null
