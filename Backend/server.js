@@ -12,14 +12,32 @@ const app = exp()
 
 app.use(
   cors({
-    origin: [
-      'http://localhost:5173',
-      'https://atp-24-eg-105-g54-blogg-git-035ccb-akhileshs-projects-7e082507.vercel.app',
-      'https://atp-24-eg-105-g54-blogg-app.vercel.app'  // ← add this
-    ],
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        'http://localhost:5173',
+      ]
+      // Allow any vercel.app subdomain
+      const vercelPattern = /^https:\/\/.*\.vercel\.app$/
+
+      if (!origin || allowedOrigins.includes(origin) || vercelPattern.test(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
     credentials: true
   })
 )
+// app.use(
+//   cors({
+//     origin: [
+//       'http://localhost:5173',
+//       'https://atp-24-eg-105-g54-blogg-git-035ccb-akhileshs-projects-7e082507.vercel.app',
+//       'https://atp-24-eg-105-g54-blogg-app.vercel.app'  // ← add this
+//     ],
+//     credentials: true
+//   })
+// )
 
 //add cookie parser middleware
 app.use(cookieParser())
