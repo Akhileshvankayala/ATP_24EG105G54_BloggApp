@@ -1,3 +1,4 @@
+import 'dotenv/config'  // add this as first line
 import exp from 'express'
 import { connect } from 'mongoose'
 import { userApp } from './APIs/UserAPI.js'
@@ -14,10 +15,32 @@ const app = exp()
 // CORS settings to allow requests from the frontend
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'https://atp-24-eg-110-a17.vercel.app'],
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        'http://localhost:5173',
+      ]
+      // Allow any vercel.app subdomain
+      const vercelPattern = /^https:\/\/.*\.vercel\.app$/
+
+      if (!origin || allowedOrigins.includes(origin) || vercelPattern.test(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
     credentials: true
   })
 )
+// app.use(
+//   cors({
+//     origin: [
+//       'http://localhost:5173',
+//       'https://atp-24-eg-105-g54-blogg-git-035ccb-akhileshs-projects-7e082507.vercel.app',
+//       'https://atp-24-eg-105-g54-blogg-app.vercel.app'  // ← add this
+//     ],
+//     credentials: true
+//   })
+// )
 
 // Standard middleware for parsing cookies and JSON bodies
 app.use(cookieParser())

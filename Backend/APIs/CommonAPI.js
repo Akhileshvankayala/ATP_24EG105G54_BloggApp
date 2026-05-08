@@ -15,7 +15,7 @@ export const commonApp = exp.Router()
  * Purpose: Handles new user and author registrations with profile image upload
  */
 commonApp.post(
-  '/users',
+  '/auth/users',
   upload.single('profileImageUrl'),
   async (req, res, next) => {
     let cloudinaryResult = null
