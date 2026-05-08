@@ -3,41 +3,50 @@ import { userModel } from '../models/UserModel.js'
 import { compare, hash } from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { verifyToken } from '../middlewares/verifyToken.js'
-const { sign } = jwt
-export const commonApp = exp.Router()
 import { upload } from '../config/multer.js'
 import { uploadToCloudinary } from '../config/cloudinaryUpload.js'
 import cloudinary from '../config/cloudinary.js'
 
-//Router for registration
+const { sign } = jwt
+export const commonApp = exp.Router()
+
+/**
+ * Route: POST /users
+ * Purpose: Handles new user and author registrations with profile image upload
+ */
 commonApp.post(
   '/users',
   upload.single('profileImageUrl'),
   async (req, res, next) => {
     let cloudinaryResult = null
     try {
-      const allowedROles = ['USER', 'AUTHOR']
+      const allowedRoles = ['USER', 'AUTHOR']
       const newUser = req.body
-      if (!allowedROles.includes(newUser.role)) {
-        return res.status(400).json({ message: 'Invalid role' })
+
+      // Ensure the role being assigned is valid
+      if (!allowedRoles.includes(newUser.role)) {
+        return res.status(400).json({ message: 'The provided role is invalid' })
       }
-      //upload image to cloudinary from memoryStorage
+
+      // If an image was uploaded, send it to Cloudinary
       if (req.file) {
         cloudinaryResult = await uploadToCloudinary(req.file.buffer)
         newUser.profileImageUrl = cloudinaryResult?.secure_url
       }
-      // Create document first
-      const newUserDocument = userModel(newUser)
-      // Validate
+
+      // Initialize the user document and validate against the schema
+      const newUserDocument = new userModel(newUser)
       await newUserDocument.validate()
-      // Hash password
+
+      // Secure the password before saving
       const hashedPassword = await hash(newUser.password, 10)
       newUserDocument.password = hashedPassword
-      // Save
+
+      // Final save to the database
       await newUserDocument.save({ validateBeforeSave: false })
-      res.status(201).json({ message: 'User created' })
+      res.status(201).json({ message: 'Your account has been created successfully' })
     } catch (err) {
-      //delete image from cloudinary
+      // If something goes wrong, clean up any uploaded image from Cloudinary
       if (cloudinaryResult?.public_id) {
         await cloudinary.uploader.destroy(cloudinaryResult.public_id)
       }
@@ -46,29 +55,33 @@ commonApp.post(
   }
 )
 
-//Router for Login
+/**
+ * Route: POST /login
+ * Purpose: Authenticates users and issues a JWT via a secure cookie
+ */
 commonApp.post('/login', async (req, res) => {
-  //get creds from the req
   const { email, password } = req.body
-  //find user by email
+
+  // Check if the user exists
   const user = await userModel.findOne({ email: email })
-  //if user not found
   if (!user) {
-    return res.status(400).json({ message: 'Invalid email' })
+    return res.status(400).json({ message: 'Invalid login credentials' })
   }
-  //compare password
+
+  // Verify the provided password
   const isMatched = await compare(password, user.password)
-  //if password isnt matched
   if (!isMatched) {
-    return res.status(400).json({ message: 'Invalid password' })
+    return res.status(400).json({ message: 'Invalid login credentials' })
   }
-  //check if user is active
+
+  // Ensure the account hasn't been disabled by an admin
   if (!user.isUserActive) {
     return res.status(403).json({
-      message: 'Your account has been deactivated. Please contact the admin.'
+      message: 'This account is currently inactive. Please contact support.'
     })
   }
-  //create jwt
+
+  // Generate a JWT containing essential user info
   const signedToken = sign(
     {
       id: user._id,
@@ -80,69 +93,85 @@ commonApp.post('/login', async (req, res) => {
     process.env.SECRET_KEY,
     { expiresIn: '1h' }
   )
+
+  const isSecureCookie = process.env.NODE_ENV === 'production'
+
+  // Set the token as a secure, HTTP-only cookie
   res.cookie('token', signedToken, {
     httpOnly: true,
-    secure: true,
+    secure: isSecureCookie,
     sameSite: 'none'
   })
-  //remove user password
+
+  // Respond with user data (excluding the sensitive password field)
   const userObj = user.toObject()
   delete userObj.password
-  //send res
-  res.status(200).json({ message: 'Login success', payload: userObj })
+  res.status(200).json({ message: 'Welcome back! Login successful', payload: userObj })
 })
 
-// Route for Logout
+/**
+ * Route: GET /logout
+ * Purpose: Clears the authentication cookie to log the user out
+ */
 commonApp.get('/logout', (req, res) => {
-  //delete token fromm cookie storage
+  const isSecureCookie = process.env.NODE_ENV === 'production'
+
   res.clearCookie('token', {
     httpOnly: true,
-    secure: true,
+    secure: isSecureCookie,
     sameSite: 'none'
   })
-  //send res
-  res.status(200).json({ message: 'Logout success' })
+  res.status(200).json({ message: 'You have been logged out successfully' })
 })
 
-//Page Refresh
+/**
+ * Route: GET /check-auth
+ * Purpose: Used by the frontend to verify if the user's session is still active
+ */
 commonApp.get(
   '/check-auth',
   verifyToken('USER', 'AUTHOR', 'ADMIN'),
   (req, res) => {
-    res.status(200).json({ message: 'Authenticated', payload: req.user })
+    res.status(200).json({ message: 'Session is active', payload: req.user })
   }
 )
 
-//change password
+/**
+ * Route: PUT /password
+ * Purpose: Allows logged-in users to update their account password
+ */
 commonApp.put(
   '/password',
   verifyToken('USER', 'AUTHOR', 'ADMIN'),
   async (req, res) => {
     const { currentPassword, newPassword } = req.body
-    //check if both passwords are same
+
+    // Basic check to ensure the new password is actually different
     if (currentPassword === newPassword) {
       return res.status(400).json({
-        message: 'The new password is the same as the current password'
+        message: 'The new password must be different from your current one'
       })
     }
-    //get user id from token
+
     const userId = req.user?.id
-    //find user
     const user = await userModel.findById(userId)
+    
     if (!user) {
-      return res.status(404).json({ message: 'User not found' })
+      return res.status(404).json({ message: 'Account not found' })
     }
-    //verify current password
+
+    // Confirm the current password is correct before allowing a change
     const verifiedPassword = await compare(currentPassword, user.password)
     if (!verifiedPassword) {
-      return res.status(401).json({ message: 'Incorrect password' })
+      return res.status(401).json({ message: 'The current password provided is incorrect' })
     }
-    //hash new password
+
+    // Hash and save the new password
     const updatedPassword = await hash(newPassword, 10)
-    //update password
     user.password = updatedPassword
-    //save
     await user.save()
-    res.status(200).json({ message: 'Password successfully changed' })
+
+    res.status(200).json({ message: 'Your password has been updated' })
   }
 )
+

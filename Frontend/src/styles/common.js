@@ -1,17 +1,26 @@
-// src/styles/common.js
-// Theme: Apple Light — white/f5f5f7 background, #1d1d1f text, #0066cc accent
-// Inspired by apple.com — no gradients, no shadows, pure typography & spacing
+/**
+ * Blog App Design System (common.js)
+ * 
+ * Philosophy: A premium, minimal interface inspired by modern design systems (like Apple's HIG).
+ * Color Palette:
+ * - Backgrounds: White / #f5f5f7 (Soft Gray)
+ * - Typography: #1d1d1f (Near Black) / #6e6e73 (Muted Gray)
+ * - Primary Accent: #0066cc (Vibrant Blue)
+ */
 
-// ─── Layout ───────────────────────────────────────────
+// ─── Layout & Grids ───────────────────────────────────────────
+// Base structural components for consistent page spacing
 export const pageBackground = "bg-white min-h-screen";
 export const pageWrapper = "max-w-5xl mx-auto px-6 py-16";
 export const section = "mb-14";
 
-// ─── Cards ────────────────────────────────────────────
+// ─── Cards & Containers ────────────────────────────────────────────
+// Unified card style used for articles, comments, and profile sections
 export const cardClass =
   "bg-[#f5f5f7] rounded-2xl p-7 hover:bg-[#ebebf0] transition-colors duration-200 cursor-pointer";
 
 // ─── Typography ───────────────────────────────────────
+// Hierarchy for titles, body text, and links
 export const pageTitleClass =
   "text-5xl font-bold text-[#1d1d1f] tracking-tight leading-none mb-2";
 export const headingClass = "text-2xl font-bold text-[#1d1d1f] tracking-tight";
@@ -23,6 +32,7 @@ export const linkClass =
   "text-[#0066cc] hover:text-[#004499] transition-colors";
 
 // ─── Buttons ──────────────────────────────────────────
+// Action elements with consistent padding and rounded shapes
 export const primaryBtn =
   "bg-[#0066cc] text-white font-semibold px-5 py-2 rounded-full hover:bg-[#004499] transition-colors cursor-pointer text-sm tracking-tight";
 export const secondaryBtn =
@@ -31,6 +41,7 @@ export const ghostBtn =
   "text-[#0066cc] font-medium hover:text-[#004499] transition-colors cursor-pointer text-sm";
 
 // ─── Forms ────────────────────────────────────────────
+// Structured input styling with focus rings for accessibility
 export const formCard = "bg-[#f5f5f7] rounded-2xl p-10 max-w-4xl mx-auto";
 export const formTitle =
   "text-2xl font-bold text-[#1d1d1f] tracking-tight text-center mb-7";
@@ -41,7 +52,8 @@ export const formGroup = "mb-4";
 export const submitBtn =
   "w-full bg-[#0066cc] text-white font-semibold py-2.5 rounded-full hover:bg-[#004499] transition-colors cursor-pointer mt-2 text-sm tracking-tight";
 
-// ─── Navbar ───────────────────────────────────────────
+// ─── Navigation ───────────────────────────────────────────
+// Fixed top bar with glassmorphism (blur) effect
 export const navbarClass =
   "bg-white/85 backdrop-blur-xl backdrop-saturate-150 border-b border-[#e8e8ed] px-8 h-[52px] flex items-center sticky top-0 z-50";
 export const navContainerClass =
@@ -53,8 +65,8 @@ export const navLinkClass =
   "text-[0.8rem] text-[#6e6e73] hover:text-[#1d1d1f] transition-colors font-normal";
 export const navLinkActiveClass = "text-[0.8rem] text-[#0066cc] font-medium";
 
-// ─── Article / Blog ───────────────────────────────────
-//export const articleGrid        = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[#e8e8ed] border border-[#e8e8ed] rounded-2xl overflow-hidden"
+// ─── Article Feed ───────────────────────────────────
+// Grid and card settings for the main article listing
 export const articleGrid =
   "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6";
 export const articleCardClass =
@@ -70,44 +82,39 @@ export const timestampClass =
 export const tagClass =
   "text-[0.65rem] font-semibold text-[#0066cc] uppercase tracking-widest w-fit";
 
-// ─── Article Page ─────────────────────────────────────
+// ─── Detailed Article View ─────────────────────────────────────
+// Layout for full article reading experience
 export const articlePageWrapper = "max-w-3xl mx-auto px-6 py-14";
-
 export const articleHeader = "mb-10 flex flex-col gap-4";
-
 export const articleCategory =
   "text-[0.7rem] font-semibold uppercase tracking-widest text-[#0066cc]";
-
 export const articleMainTitle =
   "text-4xl font-bold text-[#1d1d1f] leading-tight tracking-tight";
-
 export const articleAuthorRow =
   "flex items-center justify-between border-t border-b border-[#e8e8ed] py-4 text-sm text-[#6e6e73]";
-
 export const authorInfo = "flex items-center gap-2 font-medium text-[#1d1d1f]";
-
 export const articleContent =
   "text-[#1d1d1f] leading-[1.9] text-[1rem] whitespace-pre-line mt-8";
-
 export const articleFooter =
   "border-t border-[#e8e8ed] mt-12 pt-6 text-sm text-[#a1a1a6]";
-// ─── Article Actions ─────────────────────────────
-export const articleActions = "flex gap-3 mt-6";
 
+// ─── Management Actions ─────────────────────────────
+// Specific buttons for article management (Edit/Delete)
+export const articleActions = "flex gap-3 mt-6";
 export const editBtn =
   "bg-[#0066cc] text-white text-sm px-4 py-2 rounded-full hover:bg-[#004499] transition";
-
 export const deleteBtn =
   "bg-[#ff3b30] text-white text-sm px-4 py-2 rounded-full hover:bg-[#d62c23] transition";
 
-// ─── Article Status Badge ─────────────────────────
+// ─── Status Indicators ─────────────────────────
+// Small overlays to show if an article is active or deleted
 export const articleStatusActive =
   "absolute top-3 right-3 text-[10px] font-semibold px-2 py-1 rounded-full bg-[#34c759]/20 text-[#248a3d]";
-
 export const articleStatusDeleted =
   "absolute top-3 right-3 text-[10px] font-semibold px-2 py-1 rounded-full bg-[#ff3b30]/20 text-[#cc2f26]";
 
-// ─── Feedback ─────────────────────────────────────────
+// ─── UI Feedback & States ─────────────────────────────────────────
+// Alerts, loading indicators, and empty messages
 export const errorClass =
   "bg-[#ff3b30]/[0.06] text-[#cc2f26] border border-[#ff3b30]/[0.18] rounded-xl px-4 py-3 text-sm";
 export const successClass =
@@ -116,24 +123,19 @@ export const loadingClass =
   "text-[#0066cc]/60 text-sm animate-pulse text-center py-10";
 export const emptyStateClass = "text-center text-[#a1a1a6] py-16 text-sm";
 
-// ─── Comments ───────────────────────────────────────
+// ─── Comments & Engagement ───────────────────────────────────────
+// Discussion thread styling
 export const commentsWrapper = "mt-12 flex flex-col gap-6";
-
 export const commentCard =
   "bg-[#f5f5f7] rounded-2xl p-5 transition hover:bg-[#ebebf0]";
-
 export const commentHeader = "flex items-center justify-between mb-2";
-
 export const commentUser = "text-sm font-semibold text-[#1d1d1f]";
-
 export const commentTime = "text-xs text-[#a1a1a6]";
-
 export const commentText = "text-[#1d1d1f] text-sm leading-relaxed mt-1";
-
 export const avatar =
   "w-9 h-9 rounded-full bg-[#0066cc]/10 text-[#0066cc] flex items-center justify-center text-sm font-semibold";
-
 export const commentUserRow = "flex items-center gap-3";
 
-// ─── Divider ──────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────
 export const divider = "border-t border-[#e8e8ed] my-10";
+

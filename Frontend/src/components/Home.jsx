@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../store/authStore'
 import {
   pageWrapper,
@@ -14,11 +14,22 @@ import {
   cardClass
 } from '../styles/common'
 
+/**
+ * Home Component
+ * The landing page of the application, introducing the platform's features 
+ * and providing entry points for new and existing users.
+ */
 function Home() {
   const navigate = useNavigate()
+  
+  // State from authentication store
   const isAuthenticated = useAuth((state) => state.isAuthenticated)
   const currentUser = useAuth((state) => state.currentUser)
 
+  /**
+   * Helper to determine the correct profile page based on the user's role
+   * @returns {string} The path to the profile page
+   */
   const getProfilePath = () => {
     if (!currentUser) return '/login'
     if (currentUser.role === 'AUTHOR') return '/author-profile'
@@ -29,7 +40,7 @@ function Home() {
   return (
     <div className={pageWrapper}>
 
-      {/* HERO */}
+      {/* Hero Section: Main value proposition */}
       <section className={`${section} text-center py-10`}>
         <p className={tagClass}>MyBlog</p>
 
@@ -41,6 +52,7 @@ function Home() {
           Articles from real people on topics worth your time.
         </p>
 
+        {/* Dynamic call-to-action buttons based on auth state */}
         <div className="flex items-center justify-center gap-3 mt-8">
           {isAuthenticated ? (
             <>
@@ -66,7 +78,7 @@ function Home() {
 
       <div className={divider} />
 
-      {/* WHAT YOU CAN DO */}
+      {/* Features Section: Highlights key activities available on the platform */}
       <section className={section}>
         <h2 className={`${headingClass} mb-6`}>What you can do here</h2>
 
@@ -88,7 +100,7 @@ function Home() {
 
       <div className={divider} />
 
-      {/* BOTTOM CTA */}
+      {/* Bottom CTA: Final push for user engagement */}
       <section className={`${section} text-center`}>
         <p className={`${bodyText} mb-4`}>
           {isAuthenticated ? 'Keep exploring.' : 'Free to join. No catch.'}
@@ -106,3 +118,4 @@ function Home() {
 }
 
 export default Home
+

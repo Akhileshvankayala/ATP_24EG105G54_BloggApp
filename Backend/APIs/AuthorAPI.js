@@ -2,83 +2,111 @@ import exp from "express";
 import { userModel } from "../models/UserModel.js";
 import { articleModel } from "../models/ArticleModel.js";
 import { verifyToken } from "../middlewares/verifyToken.js";
+
+// Router for Author-specific operations
 export const authorApp = exp.Router();
 
-//Write Article
+/**
+ * Route: POST /articles
+ * Purpose: Allows authors to publish new articles
+ */
 authorApp.post("/articles", verifyToken("AUTHOR"), async (req, res) => {
-  //get articleObj from client
   const articleObj = req.body;
-  //get user from decoded token
-  let user = req.user;
-  //check author
+  const user = req.user;
+
+  // Verify that the author exists in the system
   const author = await userModel.findById(articleObj.author);
-  if (author.email !== user.email) {
-    return res.status(403).json({ message: "You are not authorized" });
-  }
   if (!author) {
-    return res.status(404).json({ message: "Invalid author" });
+    return res.status(404).json({ message: "The specified author was not found" });
   }
-  //create article document
+
+  // Security check: Ensure the logged-in user is the one publishing the article
+  if (author.email !== user.email) {
+    return res.status(403).json({ message: "You are not authorized to publish as this author" });
+  }
+
+  // Create and save the new article document
   const articleDocument = new articleModel(articleObj);
-  //save
   await articleDocument.save();
-  //send res
-  res.status(201).json({ message: "Article published successfully" });
+
+  res.status(201).json({ message: "Your article has been published successfully" });
 });
 
-//Read own Articles
+/**
+ * Route: GET /articles
+ * Purpose: Retrieves all articles written by the logged-in author
+ */
 authorApp.get("/articles", verifyToken("AUTHOR"), async (req, res) => {
-  //get the user from req token
   const authorIdOfToken = req.user?.id;
-  //get articles from author id
+
+  // Find all articles matching the author's ID
   const articlesList = await articleModel.find({ author: authorIdOfToken });
-  if (!articlesList) {
-    return res.status(404).json({ message: "Articles not found" });
+  
+  if (!articlesList || articlesList.length === 0) {
+    return res.status(404).json({ message: "No articles found for this author" });
   }
-  //send res
-  res.status(200).json({ message: "Articles", payload: articlesList });
+
+  res.status(200).json({ message: "Articles retrieved", payload: articlesList });
 });
 
-//Edit Articles
+/**
+ * Route: PUT /articles
+ * Purpose: Enables authors to edit their existing articles
+ */
 authorApp.put("/articles", verifyToken("AUTHOR"), async (req, res) => {
-  //get author id from decoded token
   const authorIdOfToken = req.user?.id;
-  //get the updatedArticle from the req
   const { articleId, title, category, content } = req.body;
-  //find and update the article from article db
+
+  // Find the article by ID and ensure it belongs to the author before updating
   const modifiedArticle = await articleModel.findOneAndUpdate(
     { _id: articleId, author: authorIdOfToken },
     { $set: { title, category, content } },
     { new: true },
   );
+
   if (!modifiedArticle) {
-    return res
-      .status(403)
-      .json({ message: "You are not authorized to edit this article" });
+    return res.status(403).json({ message: "Unauthorized: You can only edit your own articles" });
   }
-  res
-    .status(200)
-    .json({ message: "updated the article", payload: modifiedArticle });
+
+  res.status(200).json({ 
+    message: "Article updated successfully", 
+    payload: modifiedArticle 
+  });
 });
-//Delete Articles(Soft delete)
+
+/**
+ * Route: PATCH /articles
+ * Purpose: Soft delete or restore an article (toggles isActive state)
+ */
 authorApp.patch("/articles", verifyToken("AUTHOR"), async (req, res) => {
-  //get user id from decodedToken
   const authorIdOfToken = req.user?.id;
-  //get body from request
-  const { articleId, isArticleActive } = req.body;
-  //get article by id
+  const { articleId } = req.body;
+  const isArticleActive = req.body.hasOwnProperty('isArticleActive')
+    ? req.body.isArticleActive
+    : req.body.isActive;
+
+  // Verify ownership of the article
   const articleOfDB = await articleModel.findOne({
     _id: articleId,
     author: authorIdOfToken,
   });
-  //chech status
-  if (isArticleActive === articleOfDB.isActive) {
-    return res
-      .status(200)
-      .json({ message: "Article already in the same state" });
+
+  if (!articleOfDB) {
+    return res.status(404).json({ message: "Article not found or access denied" });
   }
+
+  // Check if the state is already what was requested
+  if (isArticleActive === articleOfDB.isActive) {
+    return res.status(200).json({ message: "Article is already in the requested state" });
+  }
+
+  // Update and save the status
   articleOfDB.isActive = isArticleActive;
   await articleOfDB.save();
-  //send res
-  res.status(200).json({ message: "Article Modified", payload: articleOfDB });
+
+  res.status(200).json({ 
+    message: `Article ${isArticleActive ? "restored" : "deactivated"} successfully`, 
+    payload: articleOfDB 
+  });
 });
+

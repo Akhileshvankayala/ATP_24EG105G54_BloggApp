@@ -1,16 +1,73 @@
-# React + Vite
+# Blog App - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, responsive, and role-based blogging platform interface built with **React**, **Vite**, and **Tailwind CSS**. Designed with premium aesthetics, smooth transitions, and a clean user experience.
 
-Currently, two official plugins are available:
+## 🚀 Getting Started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### Prerequisites
+- **Node.js** (v16.x or higher)
+- **npm** or **yarn**
 
-## React Compiler
+### Installation
+1. Navigate to the frontend directory:
+   ```bash
+   cd Frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Development
+Start the development server:
+```bash
+npm run dev
+```
+The application will be available at `http://localhost:5173`.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🏗️ Architecture & Structure
+
+The project follows a component-based architecture with centralized state management.
+
+### Directory Map
+- `src/components/`: Modular UI components (Dashboards, Auth forms, Article views).
+- `src/store/`: State management using **Zustand** (Auth and User state).
+- `src/styles/`: Global styles and common design tokens (`common.js`).
+- `src/App.jsx`: Main routing configuration using `react-router-dom`.
+- `src/config.js`: API base URLs and environment settings.
+
+---
+
+## 🔐 Authentication & Roles
+
+The application implements a multi-tier authentication system:
+
+| Role | Permissions |
+| :--- | :--- |
+| **User** | Read articles, post comments. |
+| **Author** | Create, edit, and archive articles; manage their own workspace. |
+| **Admin** | System management, user/author account control. |
+
+**Route Protection:** Centralized via `ProtectedRoute.jsx` which validates both authentication status and specific role requirements before rendering views.
+
+---
+
+## 🎨 Design Principles
+
+- **Typography**: Uses modern sans-serif stacks for maximum readability.
+- **Micro-interactions**: Subtle hover effects and fade-in animations for a "live" feel.
+- **Consistency**: Centralized style tokens in `common.js` ensure a unified look across all 20+ components.
+- **Responsiveness**: Fully adaptive grid layouts for mobile, tablet, and desktop views.
+
+---
+
+## 🛠️ Key Technologies
+
+- **React 18**: Frontend framework.
+- **Vite**: Ultra-fast build tool and dev server.
+- **Zustand**: Lightweight state management for global auth.
+- **React Hook Form**: Optimized form handling and validation.
+- **Axios**: Promised-based HTTP client for API interactions.
+- **React Hot Toast**: Elegant notification system.

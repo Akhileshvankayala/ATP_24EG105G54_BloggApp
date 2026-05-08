@@ -1,8 +1,8 @@
-import { useParams, useLocation, useNavigate } from 'react-router'
+import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { useAuth } from '../store/authStore'
-import { toast } from 'react-toastify'
+import { toast } from 'react-hot-toast'
 import BASE_URL from '../config'
 import {
   articlePageWrapper,
@@ -30,18 +30,32 @@ import {
 } from '../styles/common.js'
 import { useForm } from 'react-hook-form'
 
+/**
+ * ArticleById Component
+ * Displays the full content of a specific article.
+ * Provides different functionalities based on the viewer's role:
+ * - Authors: Can edit or toggle the active status (delete/restore) of their own articles.
+ * - Users/Admins: Can read and add comments.
+ */
 function ArticleById() {
   const { id } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const { register, handleSubmit } = useForm()
+  
+  // React Hook Form for handling comment submission
+  const { register, handleSubmit, reset } = useForm()
 
+  // Authentication state from global store
   const user = useAuth((state) => state.currentUser)
 
+  // Use state passed from navigation if available, otherwise fetch it
   const [article, setArticle] = useState(location.state || null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  /**
+   * Effect hook to fetch article details if not provided via navigation state
+   */
   useEffect(() => {
     if (article) return
 
@@ -53,7 +67,8 @@ function ArticleById() {
         })
         setArticle(res.data.payload)
       } catch (err) {
-        setError(err.response?.data?.error)
+        console.error('Error fetching article:', err)
+        setError(err.response?.data?.error || 'Article not found.')
       } finally {
         setLoading(false)
       }
@@ -62,8 +77,10 @@ function ArticleById() {
     getArticle()
   }, [id, article])
 
+  /**
+   * Standardizes date display across the component (IST)
+   */
   const formatDate = (date) => {
-    //Keep comment timestamps consistent with the author display time zone
     return new Date(date).toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
       dateStyle: 'medium',
@@ -71,12 +88,16 @@ function ArticleById() {
     })
   }
 
-  //delete & restore article
+  /**
+   * Toggle the article's active/deleted status.
+   * Only accessible by the author.
+   */
   const toggleArticleStatus = async () => {
     const newStatus = !article.isActive
     const confirmMsg = newStatus
-      ? 'Restore this article?'
-      : 'Delete this article?'
+      ? 'Are you sure you want to restore this article for public viewing?'
+      : 'Are you sure you want to delete this article? It will be archived and hidden from readers.'
+    
     if (!window.confirm(confirmMsg)) return
 
     try {
@@ -85,145 +106,157 @@ function ArticleById() {
         { articleId: article._id, isArticleActive: newStatus },
         { withCredentials: true }
       )
+      
       setArticle(res.data.payload)
+      toast.success(res.data.message)
+      
+      // Redirect back to profile to reflect changes in the list
       navigate('/author-profile/articles', {
         replace: true,
         state: { refreshedAt: Date.now() }
       })
-      toast.success(res.data.message)
     } catch (err) {
-      const msg = err.response?.data?.message
-      if (err.response?.status === 400) {
-        toast(msg)
-      } else {
-        setError(msg || 'Operation failed')
-      }
+      console.error('Status toggle failed:', err)
+      toast.error(err.response?.data?.message || 'Operation failed. Please try again.')
     }
   }
 
-  //edit article
-  const editArticle = (articleObj) => {
-    navigate('/edit-article', { state: articleObj })
+  /**
+   * Navigates to the edit page for this article
+   */
+  const handleEdit = () => {
+    navigate(`/edit-article/${article._id}`, { state: article })
   }
 
-  //post comment by user or admin
+  /**
+   * Handles comment submission for readers and administrators
+   * @param {object} commentObj - The comment text from the form
+   */
   const addComment = async (commentObj) => {
-    //add articleId
-    commentObj.articleId = article._id
-    let res = await axios.put(`${BASE_URL}/user-api/articles`, commentObj, {
-      withCredentials: true
-    })
-    if (res.status === 200) {
-      toast.success(res.data.message)
-      setArticle(res.data.payload)
+    if (!commentObj.comment.trim()) {
+      toast.error('Comment cannot be empty')
+      return
+    }
+
+    try {
+      // Link comment to current article
+      commentObj.articleId = article._id
+      
+      const res = await axios.put(`${BASE_URL}/user-api/articles`, commentObj, {
+        withCredentials: true
+      })
+      
+      if (res.status === 200) {
+        toast.success('Your comment has been posted.')
+        setArticle(res.data.payload) // Refresh article state to show new comment
+        reset() // Clear the input field
+      }
+    } catch (err) {
+      toast.error('Failed to post comment. Please try again.')
     }
   }
 
-  if (loading) return <p className={loadingClass}>Loading article...</p>
-  if (error) return <p className={errorClass}>{error}</p>
+  // Early returns for loading and error states
+  if (loading) return <div className="py-20 text-center"><p className={loadingClass}>Opening article...</p></div>
+  if (error) return <div className="py-20 text-center"><p className={errorClass}>{error}</p></div>
   if (!article) return null
 
-  //Use role label for authors/admins, else fall back to the article's author role
-  const displayRole =
-    user?.role === 'AUTHOR' || user?.role === 'ADMIN'
-      ? user.role
-      : article.author?.role || 'USER'
+  // Determine label for the author row
+  const displayRole = user?.role === 'AUTHOR' || user?.role === 'ADMIN' ? user.role : (article.author?.role || 'AUTHOR')
 
   return (
-    <div className={articlePageWrapper}>
-      {/* Header */}
+    <div className={`${articlePageWrapper} fade-in`}>
+      {/* Top Banner: Category and Title */}
       <div className={articleHeader}>
         <span className={articleCategory}>{article.category}</span>
-
-        <h1 className={`${articleMainTitle} uppercase`}>{article.title}</h1>
+        <h1 className={articleMainTitle}>{article.title}</h1>
 
         <div className={articleAuthorRow}>
-          <div className={authorInfo}>✍️ {displayRole}</div>
-          <div>{formatDate(article.createdAt)}</div>
+          <div className={authorInfo}>Published by: <span className="font-bold">{displayRole}</span></div>
+          <div className="text-gray-400">{formatDate(article.createdAt)}</div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className={articleContent}>{article.content}</div>
+      {/* Main Body Content */}
+      <div className={articleContent}>
+        {article.content}
+      </div>
 
-      {/* AUTHOR actions */}
-      {user?.role === 'AUTHOR' && (
-        <div className={articleActions}>
-          <button className={editBtn} onClick={() => editArticle(article)}>
-            Edit
+      {/* Control Panel: Author-only actions */}
+      {user?.role === 'AUTHOR' && String(article.author?._id || article.author) === String(user._id) && (
+        <div className={`${articleActions} border-t border-gray-100 pt-8 mt-10`}>
+          <button className={editBtn} onClick={handleEdit}>
+            Edit Article
           </button>
-          <button className={deleteBtn} onClick={toggleArticleStatus}>
-            {article.isActive ? 'Delete' : 'Restore'}
+          <button 
+            className={`${deleteBtn} ${article.isActive ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-600 hover:text-white' : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-600 hover:text-white'}`} 
+            onClick={toggleArticleStatus}
+          >
+            {article.isActive ? 'Delete Article' : 'Restore Article'}
           </button>
         </div>
       )}
 
-      {/* USER & ADMIN comment form */}
+      {/* Engagement Section: Comments form for readers and admins */}
       {(user?.role === 'USER' || user?.role === 'ADMIN') && (
-        <div className={articleActions}>
+        <div className="mt-16 bg-gray-50 rounded-3xl p-8">
+          <h3 className="text-lg font-bold mb-4">Join the conversation</h3>
           <form onSubmit={handleSubmit(addComment)}>
-            <input
-              type="text"
+            <textarea
               {...register('comment')}
-              className={inputClass}
-              placeholder="Write your comment here..."
+              className={`${inputClass} min-h-[100px] resize-none`}
+              placeholder="What are your thoughts on this?"
             />
             <button
               type="submit"
-              className="bg-[#0066cc] text-white px-5 py-2 rounded-full mt-4 text-sm hover:bg-[#004499] transition"
+              className="bg-[#0066cc] text-white px-8 py-3 rounded-full mt-4 text-sm font-bold shadow-sm hover:shadow-md transition-all active:scale-95"
             >
-              Add comment
+              Post Comment
             </button>
           </form>
         </div>
       )}
 
-      {/* Comments */}
+      {/* Comments List */}
       <div className={commentsWrapper}>
-        {article.comments?.length === 0 && (
-          <p className="text-[#a1a1a6] text-sm text-center">No comments yet</p>
-        )}
+        <h4 className="text-xl font-bold mb-8">Comments ({article.comments?.length || 0})</h4>
+        
+        {article.comments?.length === 0 ? (
+          <p className="text-[#a1a1a6] text-sm text-center py-10">No comments have been posted yet. Be the first!</p>
+        ) : (
+          <div className="space-y-6">
+            {article.comments?.map((commentObj, index) => {
+              const email = commentObj.user?.email || commentObj.userEmail || commentObj.email || 'Anonymous'
+              const firstLetter = email.charAt(0).toUpperCase()
 
-        {article.comments?.map((commentObj, index) => {
-          const commentUserId = commentObj.user?._id || commentObj.user
-          const emailFromComment =
-            commentObj.user?.email || commentObj.userEmail || commentObj.email
-          const isCurrentUser =
-            commentUserId && user?._id
-              ? String(commentUserId) === String(user._id)
-              : false
-          //Prefer email from populated user/comment payloads; fallback for anonymous state
-          const name = emailFromComment || (isCurrentUser ? user.email : 'User')
-          const firstLetter = name.charAt(0).toUpperCase()
-
-          return (
-            <div key={index} className={commentCard}>
-              {/* Header */}
-              <div className={commentHeader}>
-                <div className={commentUserRow}>
-                  <div className={avatar}>{firstLetter}</div>
-                  <div>
-                    <p className={commentUser}>{name}</p>
-                    <p className={commentTime}>
-                      {formatDate(commentObj.createdAt || new Date())}
-                    </p>
+              return (
+                <div key={index} className={commentCard}>
+                  <div className={commentHeader}>
+                    <div className={commentUserRow}>
+                      <div className={`${avatar} bg-gray-200 text-gray-700`}>{firstLetter}</div>
+                      <div>
+                        <p className={commentUser}>{email}</p>
+                        <p className={commentTime}>
+                          {formatDate(commentObj.createdAt || new Date())}
+                        </p>
+                      </div>
+                    </div>
                   </div>
+                  <p className={commentText}>{commentObj.comment}</p>
                 </div>
-              </div>
-
-              {/* Comment */}
-              <p className={commentText}>{commentObj.comment}</p>
-            </div>
-          )
-        })}
+              )
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Footer */}
-      <div className={articleFooter}>
-        Last updated: {formatDate(article.updatedAt)}
+      {/* Meta Footer */}
+      <div className={`${articleFooter} mt-12 pt-8 border-t border-gray-100 text-xs text-gray-400`}>
+        Article ID: {article._id} | Last updated: {formatDate(article.updatedAt)}
       </div>
     </div>
   )
 }
 
 export default ArticleById
+

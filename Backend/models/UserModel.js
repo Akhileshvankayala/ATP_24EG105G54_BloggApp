@@ -1,4 +1,9 @@
 import { Schema, model } from "mongoose";
+
+/**
+ * User Schema Definition
+ * Represents users, authors, and admins in the blog platform
+ */
 const userSchema = new Schema(
   {
     firstName: {
@@ -11,16 +16,16 @@ const userSchema = new Schema(
     email: {
       type: String,
       required: [true, "Email is required"],
-      unique: [true, "Email already exits"],
+      unique: [true, "This email is already registered"],
     },
     password: {
       type: String,
-      required: [true, "Password required"],
+      required: [true, "Password is required for security"],
     },
     role: {
       type: String,
       enum: ["USER", "AUTHOR", "ADMIN"],
-      required: [true, "{Value} is Invalid role"],
+      required: [true, "A valid role must be assigned"],
     },
     profileImageUrl: {
       type: String,
@@ -31,11 +36,15 @@ const userSchema = new Schema(
     },
   },
   {
+    // Automatically add createdAt and updatedAt fields
     timestamps: true,
+    // Remove __v version key from responses
     versionKey: false,
+    // Throw error if fields outside schema are provided
     strict: "throw",
   },
 );
 
-//Create Model
+// Create and export the User model for database operations
 export const userModel = model("user", userSchema);
+

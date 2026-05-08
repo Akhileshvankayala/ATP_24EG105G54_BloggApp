@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router'
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import Root from '../src/components/Root'
 import Home from '../src/components/Home'
 import Register from '../src/components/Register'
@@ -17,11 +17,16 @@ import { Toaster } from 'react-hot-toast'
 import Unauthorized from '../src/components/Unauthorized'
 import ProtectedRoute from '../src/components/ProtectedRoute'
 
+/**
+ * Main App Component
+ * Defines the routing structure and global providers for the application
+ */
 function App() {
+  // Configuration for all application routes
   const routerObj = createBrowserRouter([
     {
       path: '/',
-      element: <Root />,
+      element: <Root />, // Main layout wrapper
       children: [
         {
           path: '',
@@ -35,6 +40,7 @@ function App() {
           path: 'login',
           element: <Login />
         },
+        // Standard User Routes
         {
           path: 'user-profile',
           element: (
@@ -45,8 +51,13 @@ function App() {
         },
         {
           path: 'articles',
-          element: <Articles />
+          element: (
+            <ProtectedRoute allowedRoles={['USER', 'AUTHOR', 'ADMIN']}>
+              <Articles />
+            </ProtectedRoute>
+          )
         },
+        // Author-specific Routes
         {
           path: 'author-profile',
           element: (
@@ -69,6 +80,7 @@ function App() {
             }
           ]
         },
+        // Admin-specific Routes
         {
           path: 'admin-profile',
           element: (
@@ -92,14 +104,24 @@ function App() {
             { path: 'articles', element: <Articles /> }
           ]
         },
+        // Shared Article Routes
         {
           path: 'article/:id',
-          element: <ArticleById />
+          element: (
+            <ProtectedRoute allowedRoles={['USER', 'AUTHOR', 'ADMIN']}>
+              <ArticleById />
+            </ProtectedRoute>
+          )
         },
         {
-          path: 'edit-article',
-          element: <EditArticle />
+          path: 'edit-article/:id',
+          element: (
+            <ProtectedRoute allowedRoles={['AUTHOR']}>
+              <EditArticle />
+            </ProtectedRoute>
+          )
         },
+        // Error/Permission Routes
         {
           path: 'unauthorized',
           element: <Unauthorized />
@@ -109,11 +131,24 @@ function App() {
   ])
 
   return (
-    <div>
-      <Toaster position="top-center" reverseOrder={false} />
+    <div className="app-container">
+      {/* Toast notifications configuration */}
+      <Toaster 
+        position="top-center" 
+        reverseOrder={false} 
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+        }}
+      />
+      {/* Provide the router to the application */}
       <RouterProvider router={routerObj} />
     </div>
   )
 }
 
 export default App
+

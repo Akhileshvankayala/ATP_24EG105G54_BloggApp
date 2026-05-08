@@ -12,11 +12,16 @@ import {
   linkClass,
   loadingClass,
 } from "../styles/common";
-import { NavLink, useNavigate, useLocation } from "react-router";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../store/authStore";
 import { useEffect } from "react";
 import { toast } from "react-hot-toast";
 
+/**
+ * Login Component
+ * Provides a user interface for existing users to authenticate.
+ * Redirects users to their respective dashboards based on their role upon success.
+ */
 function Login() {
   const {
     register,
@@ -25,78 +30,76 @@ function Login() {
   } = useForm();
 
   const navigate = useNavigate();
-  //get state from auth store
+  
+  // Extract authentication state and actions from the global store
   const { login, currentUser, loading, error, isAuthenticated } = useAuth(
     (state) => state,
   );
-  //on user login
+
+  /**
+   * Form submission handler
+   * @param {object} userCredObj - The credentials entered by the user
+   */
   const onUserLogin = (userCredObj) => {
-    //call login() of auth store
     login(userCredObj);
   };
 
+  /**
+   * Effect hook to handle redirection after a successful login
+   */
   useEffect(() => {
     if (!isAuthenticated || !currentUser?.role) {
       return;
     }
 
+    // Role-based redirection logic
     if (currentUser.role === "USER") {
-      toast.success("User Login succes and redirecting to User profile", {
-        duration: 2000,
-      });
+      toast.success("Signed in successfully. Redirecting to your dashboard...");
       navigate("/user-profile");
-    }
-    if (currentUser.role === "AUTHOR") {
-      toast.success("Author Login succes and Author redirecting to profile", {
-        duration: 2000,
-      });
+    } else if (currentUser.role === "AUTHOR") {
+      toast.success("Author access granted. Loading your profile...");
       navigate("/author-profile");
-    }
-    if (currentUser.role === "ADMIN") {
-      toast.success("Admin Login succes and Admin redirecting to profile", {
-        duration: 2000,
-      });
+    } else if (currentUser.role === "ADMIN") {
+      toast.success("Administrative access granted. Loading control panel...");
       navigate("/admin-profile");
     }
   }, [currentUser, isAuthenticated, navigate]);
 
-  //deal with loading
+  // Render a loading state while the authentication request is in progress
   if (loading) {
-    return <p className={loadingClass}>Loading....</p>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className={loadingClass}>Authenticating, please wait...</p>
+      </div>
+    );
   }
 
   return (
-    <div
-      className={`${pageBackground} flex items-center justify-center py-16 px-4`}
-    >
+    <div className={`${pageBackground} flex items-center justify-center py-16 px-4`}>
       <div className={formCard}>
-        {/* Title */}
+        {/* Sign-in Heading */}
         <h2 className={formTitle}>Sign In</h2>
 
-        {/* API error */}
-        {error && <p className={errorClass}>{error}</p>}
+        {/* Display any server-side authentication errors */}
+        {error && <p className={`${errorClass} text-center mb-4`}>{error}</p>}
 
         <form onSubmit={handleSubmit(onUserLogin)}>
-          {/* Email */}
+          {/* Email Input Field */}
           <div className={formGroup}>
-            <label className={labelClass}>Email</label>
+            <label className={labelClass}>Email Address</label>
             <input
               type="email"
-              placeholder="you@example.com"
+              placeholder="name@example.com"
               className={inputClass}
               {...register("email", {
-                required: "Email is required",
-
-                validate: (value) =>
-                  value.trim().length > 0 || "Email cannot be empty",
+                required: "Please enter your email",
+                validate: (value) => value.trim().length > 0 || "Email cannot be empty",
               })}
             />
-            {errors.email && (
-              <p className={errorClass}>{errors.email.message}</p>
-            )}
+            {errors.email && <p className={errorClass}>{errors.email.message}</p>}
           </div>
 
-          {/* Password */}
+          {/* Password Input Field */}
           <div className={formGroup}>
             <label className={labelClass}>Password</label>
             <input
@@ -104,39 +107,33 @@ function Login() {
               placeholder="••••••••"
               className={inputClass}
               {...register("password", {
-                required: "Password is required",
-                validate: (value) =>
-                  value.trim().length > 0 || "Password cannot be empty",
+                required: "Please enter your password",
+                validate: (value) => value.trim().length > 0 || "Password cannot be empty",
               })}
             />
-            {errors.password && (
-              <p className={errorClass}>{errors.password.message}</p>
-            )}
+            {errors.password && <p className={errorClass}>{errors.password.message}</p>}
           </div>
 
-          {/* Forgot password */}
-          <div className="text-right -mt-2 mb-4">
-            <a href="/forgot-password" className={`${linkClass} text-xs`}>
-              Forgot password?
-            </a>
-          </div>
-
-          {/* Submit */}
+          {/* Helper links */}
+          {/* Form Action Button */}
           <button type="submit" className={submitBtn}>
             Sign In
           </button>
         </form>
 
-        {/* Footer */}
-        <p className={`${mutedText} text-center mt-5`}>
-          Don't have an account?{" "}
-          <NavLink to="/register" className={linkClass}>
-            Create one
-          </NavLink>
-        </p>
+        {/* Link to Registration page */}
+        <div className="mt-6 pt-6 border-t border-gray-100">
+          <p className={`${mutedText} text-center`}>
+            New to MyBlog?{" "}
+            <NavLink to="/register" className={linkClass}>
+              Create an account
+            </NavLink>
+          </p>
+        </div>
       </div>
     </div>
   );
 }
 
 export default Login;
+

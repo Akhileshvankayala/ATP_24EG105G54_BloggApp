@@ -1,29 +1,44 @@
 import jwt from 'jsonwebtoken'
 import { config } from 'dotenv'
+
+// Load environment variables
 config()
+
 const { verify } = jwt
 
+/**
+ * Middleware: verifyToken
+ * Purpose: Authenticates the user via JWT and checks if their role is permitted for the route
+ * @param {...string} allowedRoles - List of roles that are authorized to access the route
+ */
 export const verifyToken = (...allowedRoles) => {
   return (req, res, next) => {
     try {
-      //get token from cookie
+      // Extract the token from the secure cookie
       const token = req.cookies?.token
-      //check token existed or not
+      
+      // If no token is found, the user is not logged in
       if (!token) {
-        return res.status(401).json({ message: 'Please Login first' })
+        return res.status(401).json({ message: 'Authentication required. Please log in.' })
       }
-      //validate token
-      let decodedToken = verify(token, process.env.SECRET_KEY)
 
-      //check the role is same as role in decodedToken
+      // Verify the token using the secret key
+      const decodedToken = verify(token, process.env.SECRET_KEY)
+
+      // Authorization: Check if the user's role is in the list of allowed roles
       if (!allowedRoles.includes(decodedToken.role)) {
-        return res.status(403).json({ message: 'You are not authorized' })
+        return res.status(403).json({ message: 'Access denied: You do not have the required permissions' })
       }
-      //add decoded token
+
+      // Attach the decoded user information to the request object for use in routes
       req.user = decodedToken
+      
+      // Proceed to the next middleware or route handler
       next()
     } catch (err) {
-      res.status(401).json({ message: 'Invalid token' })
+      // If verification fails (e.g., token expired or tampered with)
+      res.status(401).json({ message: 'Your session has expired or the token is invalid' })
     }
   }
 }
+

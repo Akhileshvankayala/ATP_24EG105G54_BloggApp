@@ -11,11 +11,15 @@ import {
   mutedText
 } from '../styles/common'
 import { useForm } from 'react-hook-form'
-import { NavLink, useNavigate } from 'react-router'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import axios from 'axios'
 import BASE_URL from '../config'
 
+/**
+ * Register Component
+ * Handles new user and author registrations, including profile image uploads.
+ */
 function Register() {
   const navigate = useNavigate()
   const {
@@ -23,172 +27,151 @@ function Register() {
     handleSubmit,
     formState: { errors }
   } = useForm()
+  
+  // Local state for UI feedback
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState(null)
   const [preview, setPreview] = useState(null)
 
-  //When user registration submitted
+  /**
+   * Submission handler for registration form
+   * Uses FormData to handle mixed text and file data
+   * @param {object} userObj - The data collected from the form
+   */
   const onUserRegister = async (userObj) => {
-    console.log(userObj)
-    //file + userObj ---> FormData
-    //create FormData object
     const formData = new FormData()
-    //add all user properties and file to this formData Object
+    
+    // Append user details to form data
     formData.append('firstName', userObj.firstName)
     formData.append('lastName', userObj.lastName)
     formData.append('email', userObj.email)
     formData.append('password', userObj.password)
     formData.append('role', userObj.role)
-    //Append if image is exists
+    
+    // Append the profile image if one was selected
     if (userObj.profileImageUrl?.[0]) {
       formData.append('profileImageUrl', userObj.profileImageUrl[0])
     }
+
     try {
       setLoading(true)
+      setApiError(null)
+      
       const res = await axios.post(
         `${BASE_URL}/auth/users`,
         formData,
         { withCredentials: true }
       )
+      
       if (res.status === 201) {
+        // Success: take user to login page
         navigate('/login')
       }
     } catch (err) {
-      console.log('err in registration', err)
-      setApiError(err.response?.data?.error || 'Registration failed')
+      console.error('Registration error:', err)
+      setApiError(err.response?.data?.error || 'Something went wrong during registration. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div
-      className={`${pageBackground} flex items-center justify-center py-16 px-4`}
-    >
+    <div className={`${pageBackground} flex items-center justify-center py-16 px-4`}>
       <div className={formCard}>
+        {/* Header */}
         <h2 className={formTitle}>Create an Account</h2>
 
-        {/* API Error */}
-        {apiError && <p className="text-red-500">{errorClass} </p>}
-        {/* {apiError && <p className={errorClass}>{apiError}</p>} */}
+        {/* Global API Error Message */}
+        {apiError && <p className={`${errorClass} text-center mb-4`}>{apiError}</p>}
 
         <form onSubmit={handleSubmit(onUserRegister)}>
-          {/* ROLE */}
+          {/* Role Selection (User vs Author) */}
           <div className="mb-5">
-            <p className={labelClass}>Register as</p>
-
-            <div className="flex gap-6 mt-1">
+            <p className={labelClass}>I want to register as a:</p>
+            <div className="flex gap-6 mt-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   value="USER"
-                  {...register('role', {
-                    required: 'Please select a role'
-                  })}
+                  {...register('role', { required: 'Please select your role' })}
                   className="accent-blue-600 w-4 h-4"
                 />
-                <span className="text-sm">User</span>
+                <span className="text-sm text-gray-700">Reader (User)</span>
               </label>
 
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   value="AUTHOR"
-                  {...register('role', {
-                    required: 'Please select a role'
-                  })}
+                  {...register('role', { required: 'Please select your role' })}
                   className="accent-blue-600 w-4 h-4"
                 />
-                <span className="text-sm">Author</span>
+                <span className="text-sm text-gray-700">Writer (Author)</span>
               </label>
             </div>
-
             {errors.role && <p className={errorClass}>{errors.role.message}</p>}
           </div>
 
           <div className={divider} />
 
-          {/* NAME */}
-          <div className="sm:flex gap-4 mb-4">
-            <div className="flex-1">
+          {/* Full Name Fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div>
               <label className={labelClass}>First Name</label>
               <input
                 type="text"
                 className={inputClass}
-                placeholder="First name"
+                placeholder="Jane"
                 {...register('firstName', {
                   required: 'First name is required',
-                  minLength: {
-                    value: 2,
-                    message: 'At least 2 characters required'
-                  },
-                  maxLength: {
-                    value: 30,
-                    message: 'Max 30 characters allowed'
-                  },
+                  minLength: { value: 2, message: 'Minimum 2 characters' },
                   validate: (v) => v.trim().length > 0 || 'Cannot be empty'
                 })}
               />
-              {errors.firstName && (
-                <p className={errorClass}>{errors.firstName.message}</p>
-              )}
+              {errors.firstName && <p className={errorClass}>{errors.firstName.message}</p>}
             </div>
 
-            <div className="flex-1">
+            <div>
               <label className={labelClass}>Last Name</label>
               <input
                 type="text"
                 className={inputClass}
-                placeholder="Last name"
-                {...register('lastName', {
-                  maxLength: {
-                    value: 30,
-                    message: 'Max 30 characters allowed'
-                  }
-                })}
+                placeholder="Doe"
+                {...register('lastName')}
               />
-              {errors.lastName && (
-                <p className={errorClass}>{errors.lastName.message}</p>
-              )}
             </div>
           </div>
 
-          {/* EMAIL */}
+          {/* Email Field */}
           <div className={formGroup}>
-            <label className={labelClass}>Email</label>
+            <label className={labelClass}>Email Address</label>
             <input
               type="email"
               className={inputClass}
-              placeholder="you@example.com"
-              {...register('email', {
-                required: 'Email is required'
-              })}
+              placeholder="jane.doe@example.com"
+              {...register('email', { required: 'A valid email is required' })}
             />
-            {errors.email && (
-              <p className={errorClass}>{errors.email.message}</p>
-            )}
+            {errors.email && <p className={errorClass}>{errors.email.message}</p>}
           </div>
 
-          {/* PASSWORD */}
+          {/* Password Field */}
           <div className={formGroup}>
             <label className={labelClass}>Password</label>
             <input
               type="password"
               className={inputClass}
-              placeholder="Min. 8 characters"
-              {...register('password', {
-                required: 'Password is required'
+              placeholder="Choose a strong password"
+              {...register('password', { 
+                required: 'Password is required',
+                minLength: { value: 6, message: 'Password must be at least 6 characters' }
               })}
             />
-            {errors.password && (
-              <p className={errorClass}>{errors.password.message}</p>
-            )}
+            {errors.password && <p className={errorClass}>{errors.password.message}</p>}
           </div>
 
-          {/* PROFILE IMAGE */}
+          {/* Profile Image Upload with Preview */}
           <div className={formGroup}>
-            <label className={labelClass}>Profile Image</label>
-
+            <label className={labelClass}>Profile Photo (Optional)</label>
             <input
               type="file"
               className={inputClass}
@@ -197,56 +180,52 @@ function Register() {
                 validate: {
                   fileType: (files) => {
                     if (!files?.[0]) return true
-                    return (
-                      ['image/png', 'image/jpeg'].includes(files[0].type) ||
-                      'Only JPG/PNG allowed'
-                    )
+                    return ['image/png', 'image/jpeg'].includes(files[0].type) || 'Only JPG or PNG images are accepted'
                   },
                   fileSize: (files) => {
                     if (!files?.[0]) return true
-                    return files[0].size <= 2 * 1024 * 1024 || 'Max size 2MB'
+                    return files[0].size <= 2 * 1024 * 1024 || 'Image size must be under 2MB'
                   }
                 }
               })}
-              onChange={(event) => {
-                const file = event.target.files[0]
-                if (file) {
-                  setPreview(URL.createObjectURL(file))
-                }
+              onChange={(e) => {
+                const file = e.target.files[0]
+                if (file) setPreview(URL.createObjectURL(file))
               }}
             />
-
-            {errors.profileImageUrl && (
-              <p className={errorClass}>{errors.profileImageUrl.message}</p>
-            )}
-            {/* Image preview */}
+            {errors.profileImageUrl && <p className={errorClass}>{errors.profileImageUrl.message}</p>}
+            
             {preview && (
-              <div className="mt-3 flex justify-center">
+              <div className="mt-4 flex flex-col items-center">
+                <p className="text-xs text-gray-500 mb-2">Preview:</p>
                 <img
                   src={preview}
-                  alt=""
-                  className="w-24 h-24 overflow-hidden rounded-full ring-2"
+                  alt="Profile Preview"
+                  className="w-20 h-20 object-cover rounded-full border-2 border-blue-100 shadow-sm"
                 />
               </div>
             )}
           </div>
 
-          {/* SUBMIT */}
-          <button type="submit" className={submitBtn}>
-            Create Account
+          {/* Submit Action */}
+          <button type="submit" disabled={loading} className={submitBtn}>
+            {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
 
-        {/* FOOTER */}
-        <p className={`${mutedText} text-center mt-5`}>
-          Already have an account?{' '}
-          <NavLink to="/login" className="text-[#0066cc] font-medium">
-            Sign in
-          </NavLink>
-        </p>
+        {/* Existing User Redirect */}
+        <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+          <p className={mutedText}>
+            Already have an account?{' '}
+            <NavLink to="/login" className="text-blue-600 font-semibold hover:underline">
+              Sign in
+            </NavLink>
+          </p>
+        </div>
       </div>
     </div>
   )
 }
 
 export default Register
+

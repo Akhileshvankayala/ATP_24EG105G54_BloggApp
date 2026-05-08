@@ -16,15 +16,25 @@ import {
   articleStatusDeleted
 } from '../styles/common'
 
+/**
+ * AuthorArticles Component
+ * Displays a grid of articles specifically created by the logged-in author.
+ * Shows status indicators for each article (Active/Deleted).
+ */
 function AuthorArticles() {
   const navigate = useNavigate()
   const location = useLocation()
   const user = useAuth((state) => state.currentUser)
 
+  // Local state for article collection and UI feedback
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  /**
+   * Effect to load articles on mount or when the user profile changes.
+   * Also listens for a 'refreshedAt' signal in location state to re-fetch after updates.
+   */
   useEffect(() => {
     if (!user) return
 
@@ -39,8 +49,8 @@ function AuthorArticles() {
           setArticles(res.data.payload)
         }
       } catch (err) {
-        console.log(err)
-        setError(err.response?.data?.error || 'Failed to fetch articles')
+        console.error('Error fetching author articles:', err)
+        setError(err.response?.data?.error || 'Unable to load your articles at this time.')
       } finally {
         setLoading(false)
       }
@@ -49,58 +59,68 @@ function AuthorArticles() {
     getAuthorArticles()
   }, [user, location.state?.refreshedAt])
 
+  /**
+   * Navigates to the full article view
+   * @param {object} article - The article data object
+   */
   const openArticle = (article) => {
     navigate(`/article/${article._id}`, {
       state: article
     })
   }
 
-  if (loading) return <p className={loadingClass}>Loading articles...</p>
-  if (error) return <p className={errorClass}>{error}</p>
+  // Handle loading and error states
+  if (loading) return <div className="py-20 text-center"><p className={loadingClass}>Fetching your workspace...</p></div>
+  if (error) return <div className="py-20 text-center"><p className={errorClass}>{error}</p></div>
 
+  // Handle empty state (no articles yet)
   if (articles.length === 0) {
     return (
-      <div className={emptyStateClass}>
-        You haven't published any articles yet.
+      <div className={`${emptyStateClass} bg-gray-50 border border-dashed rounded-3xl py-16`}>
+        <p>You haven't published any articles yet. Use the 'Write Article' tab to get started!</p>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 fade-in">
       {articles.map((article) => (
         <div
           key={article._id}
-          className={`${articleCardClass} relative flex flex-col overflow-hidden`}
+          className={`${articleCardClass} relative flex flex-col overflow-hidden group shadow-sm hover:shadow-md transition-all`}
         >
-          {/* Status Badge */}
+          {/* Article Visibility Status Badge */}
           <span
-            className={
+            className={`${
               article.isActive ? articleStatusActive : articleStatusDeleted
-            }
+            } absolute top-4 right-4 z-10`}
           >
-            {article.isActive ? 'ACTIVE' : 'DELETED'}
+            {article.isActive ? 'Active' : 'Archived'}
           </span>
 
           <div className="flex flex-col gap-2 min-w-0">
-            <p className={articleMeta}>{article.category}</p>
+            {/* Category Tag */}
+            <p className={`${articleMeta} uppercase tracking-wider font-bold text-[10px]`}>
+              {article.category}
+            </p>
 
-            {/* Title */}
-            <p className={`${articleTitle} wrap-break-word line-clamp-2`}>
+            {/* Title with clamping for consistency */}
+            <p className={`${articleTitle} line-clamp-2 min-h-[3rem]`}>
               {article.title}
             </p>
 
-            {/* Content */}
-            <p className={`${articleExcerpt} wrap-break-word line-clamp-3`}>
+            {/* Content Preview */}
+            <p className={`${articleExcerpt} line-clamp-3 text-sm text-gray-600`}>
               {article.content}
             </p>
           </div>
 
+          {/* Navigational Action */}
           <button
-            className={`${ghostBtn} mt-auto pt-4`}
+            className={`${ghostBtn} mt-auto pt-4 text-left font-semibold`}
             onClick={() => openArticle(article)}
           >
-            Read Article →
+            Manage Article →
           </button>
         </div>
       ))}
@@ -109,3 +129,4 @@ function AuthorArticles() {
 }
 
 export default AuthorArticles
+

@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import { useState } from 'react'
 import axios from 'axios'
 import { toast } from 'react-hot-toast'
-import { useNavigate } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 import BASE_URL from '../config'
 import {
   formCard,
@@ -16,24 +16,31 @@ import {
 } from '../styles/common'
 import { useAuth } from '../store/authStore'
 
+/**
+ * WriteArticles Component
+ * Provides a form interface for authors to create and publish new blog posts.
+ * Includes validation for title, category, and content length.
+ */
 function WriteArticles() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const currentUser = useAuth((state) => state.currentUser)
 
+  // React Hook Form setup for managed inputs and validation
   const {
     register,
     handleSubmit,
-    formState: { errors },
-    reset
+    formState: { errors }
   } = useForm()
 
-  //save article
+  /**
+   * Submission handler for the article creation form
+   * @param {object} articleObj - Data from form fields
+   */
   const submitArticle = async (articleObj) => {
-    setLoading(true)
-
-    //add authorId to articleObj
+    // Inject the current user's ID as the author of the article
     articleObj.author = currentUser._id
+    
     try {
       setLoading(true)
       const res = await axios.post(
@@ -41,95 +48,100 @@ function WriteArticles() {
         articleObj,
         { withCredentials: true }
       )
+      
       if (res.status === 201) {
-        toast.success('Article Submitted Successfully')
+        toast.success('Your article has been published successfully!')
+        // Redirect to the author's list of articles to see the new addition
         navigate('/author-profile/articles')
       }
     } catch (err) {
-      //toast.error(err.response?.data?.error || 'Failed to publish article')
+      console.error('Publishing error:', err)
+      toast.error(err.response?.data?.error || 'Failed to publish article. Please check your connection.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className={formCard}>
-      <h2 className={formTitle}>Write New Article</h2>
+    <div className={`${formCard} fade-in shadow-md`}>
+      <h2 className={formTitle}>Draft Your Masterpiece</h2>
+      <p className="text-sm text-gray-500 mb-6">Share your knowledge and insights with the community.</p>
 
       <form onSubmit={handleSubmit(submitArticle)}>
-        {/* Title */}
+        {/* Article Title Field */}
         <div className={formGroup}>
-          <label className={labelClass}>Title</label>
-
+          <label className={labelClass}>Article Title</label>
           <input
             type="text"
             className={inputClass}
-            placeholder="Enter article title"
+            placeholder="e.g., The Future of Web Development"
             {...register('title', {
-              required: 'Title is required',
+              required: 'A title is required to publish',
               minLength: {
                 value: 5,
-                message: 'Title must be at least 5 characters'
+                message: 'Title should be more descriptive (at least 5 characters)'
               }
             })}
           />
-
           {errors.title && <p className={errorClass}>{errors.title.message}</p>}
         </div>
 
-        {/* Category */}
+        {/* Category Selection */}
         <div className={formGroup}>
           <label className={labelClass}>Category</label>
-
           <select
             className={inputClass}
             {...register('category', {
-              required: 'Category is required'
+              required: 'Please select a relevant category'
             })}
           >
-            <option value="">Select category</option>
+            <option value="">Choose a topic...</option>
             <option value="technology">Technology</option>
             <option value="programming">Programming</option>
-            <option value="ai">AI</option>
+            <option value="ai">Artificial Intelligence</option>
             <option value="web-development">Web Development</option>
           </select>
-
           {errors.category && (
             <p className={errorClass}>{errors.category.message}</p>
           )}
         </div>
 
-        {/* Content */}
+        {/* Article Body Content */}
         <div className={formGroup}>
           <label className={labelClass}>Content</label>
-
           <textarea
-            rows="8"
-            className={inputClass}
-            placeholder="Write your article content..."
+            rows="10"
+            className={`${inputClass} resize-none`}
+            placeholder="Start writing here..."
             {...register('content', {
-              required: 'Content is required',
+              required: 'Article body cannot be empty',
               minLength: {
                 value: 50,
-                message: 'Content must be at least 50 characters'
+                message: 'Content must be at least 50 characters long to provide value to readers'
               }
             })}
           />
-
           {errors.content && (
             <p className={errorClass}>{errors.content.message}</p>
           )}
         </div>
 
-        {/* Submit */}
-        <button className={submitBtn} type="submit" disabled={loading}>
-          {loading ? 'Publishing...' : 'Publish Article'}
-        </button>
+        {/* Action Button */}
+        <div className="pt-4">
+          <button className={submitBtn} type="submit" disabled={loading}>
+            {loading ? 'Publishing...' : 'Publish Article Now'}
+          </button>
+        </div>
 
-        {loading && <p className={loadingClass}>Publishing article...</p>}
+        {loading && (
+          <div className="mt-4 flex items-center justify-center">
+            <p className={`${loadingClass} text-xs`}>Uploading to server...</p>
+          </div>
+        )}
       </form>
     </div>
   )
 }
 
 export default WriteArticles
+
