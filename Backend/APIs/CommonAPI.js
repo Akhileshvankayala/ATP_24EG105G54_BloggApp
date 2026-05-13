@@ -15,7 +15,7 @@ export const commonApp = exp.Router()
  * Purpose: Handles new user and author registrations with profile image upload
  */
 commonApp.post(
-  '/auth/users',
+  '/users',
   upload.single('profileImageUrl'),
   async (req, res, next) => {
     let cloudinaryResult = null
@@ -95,12 +95,13 @@ commonApp.post('/login', async (req, res) => {
   )
 
   const isSecureCookie = process.env.NODE_ENV === 'production'
+  const sameSiteValue = isSecureCookie ? 'none' : 'lax'
 
   // Set the token as a secure, HTTP-only cookie
   res.cookie('token', signedToken, {
     httpOnly: true,
     secure: isSecureCookie,
-    sameSite: 'none'
+    sameSite: sameSiteValue
   })
 
   // Respond with user data (excluding the sensitive password field)
@@ -115,11 +116,12 @@ commonApp.post('/login', async (req, res) => {
  */
 commonApp.get('/logout', (req, res) => {
   const isSecureCookie = process.env.NODE_ENV === 'production'
+  const sameSiteValue = isSecureCookie ? 'none' : 'lax'
 
   res.clearCookie('token', {
     httpOnly: true,
     secure: isSecureCookie,
-    sameSite: 'none'
+    sameSite: sameSiteValue
   })
   res.status(200).json({ message: 'You have been logged out successfully' })
 })

@@ -18,6 +18,7 @@ app.use(
     origin: function (origin, callback) {
       const allowedOrigins = [
         'http://localhost:5173',
+        'http://localhost:4000',
         'https://atp-24eg105g54-repo-updated-week-7-ncfq.onrender.com',
         'https://atp-24-eg-105-g54-blogg-jkn5pt0l4-akhileshs-projects-7e082507.vercel.app'
       ]
